@@ -13,6 +13,7 @@
 typedef enum {false, true} bool;
 
 char enteredLine[INPUT_LENGTH];
+char finalLine[10000];
 char* arguments[MAX_ARGS];
 bool outputRedirect;
 bool inputRedirect;
@@ -85,7 +86,7 @@ void tokenizeInput()
 {
     clearArguments();
     char* token;
-    token = strtok(enteredLine, " ");
+    token = strtok(finalLine, " ");
     arguments[0] = token;
     
     while(token != NULL)
@@ -232,6 +233,29 @@ void performRedirection()
         }
 }
 
+void expandPids()
+{
+   char final[10000];
+    char firstHalf[5000];
+    char secondHalf[5000];
+    char *ptr = enteredLine;
+    char *ptr2;
+    
+    ptr2 = strstr(enteredLine, "$$");
+    while (ptr2 != NULL)
+    {
+        int chars = ptr2-ptr;
+        strncpy(firstHalf, ptr, chars);
+        ptr = ptr + chars + 2;
+        strcpy(secondHalf, ptr);
+        sprintf(final, "%s%d%s", firstHalf, getpid(), secondHalf);
+        printf("%s\n", final);
+        ptr = final;
+        ptr2 = strstr(final, "$$");
+    }
+        strcpy(finalLine, final);
+}
+
 
 void main()
 {
@@ -249,15 +273,24 @@ void main()
         fflush(stdout);
         getInput();
         
-        if (strcmp(enteredLine, "status") == 0)
+        if (strstr(enteredLine, "$$") == NULL)
+        {
+            strcpy(finalLine, enteredLine);
+        }
+        else
+        {
+            expandPids();
+        }
+        
+        if (strcmp(finalLine, "status") == 0)
         {
             printf("exit value %d\n", statusCode);
         }
-        else if (strncmp(enteredLine, "#", 1) == 0 || strcmp(enteredLine, "") == 0)
+        else if (strncmp(finalLine, "#", 1) == 0 || strcmp(finalLine, "") == 0)
         {
             continue;
         }
-        else if (strcmp(enteredLine, "exit") == 0)
+        else if (strcmp(finalLine, "exit") == 0)
         {
             exit(0);
         }
